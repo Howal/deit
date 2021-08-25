@@ -214,6 +214,18 @@ def save_on_master(*args, **kwargs):
 
 
 def init_distributed_mode(args):
+    if 'MASTER_ADDR' not in os.environ:
+        if 'AZ_BATCHAI_JOB_MASTER_NODE_IP' in os.environ:
+            addr = os.environ['AZ_BATCHAI_JOB_MASTER_NODE_IP']
+        elif 'MASTER_IP' in os.environ:
+            addr = os.environ['MASTER_IP']
+        else:
+            addr = "127.0.0.1"
+        os.environ['MASTER_ADDR'] = addr
+
+    if 'MASTER_PORT' not in os.environ:
+        os.environ['MASTER_PORT'] = "99876"
+
     if 'RANK' in os.environ and 'WORLD_SIZE' in os.environ:
         args.rank = int(os.environ["RANK"])
         args.world_size = int(os.environ['WORLD_SIZE'])
@@ -221,6 +233,10 @@ def init_distributed_mode(args):
     elif 'SLURM_PROCID' in os.environ:
         args.rank = int(os.environ['SLURM_PROCID'])
         args.gpu = args.rank % torch.cuda.device_count()
+    elif 'OMPI_COMM_WORLD_RANK' in os.environ:
+        args.rank = int(os.environ['OMPI_COMM_WORLD_RANK'])
+        args.world_size = int(os.environ['OMPI_COMM_WORLD_SIZE'])
+        args.gpu = int(os.environ['OMPI_COMM_WORLD_LOCAL_RANK'])
     else:
         print('Not using distributed mode')
         args.distributed = False

@@ -1,5 +1,6 @@
 # Copyright (c) 2015-present, Facebook, Inc.
 # All rights reserved.
+import os
 import argparse
 import datetime
 import numpy as np
@@ -23,6 +24,8 @@ from losses import DistillationLoss
 from samplers import RASampler
 import models
 import utils
+
+from models import build_model
 
 
 def get_args_parser():
@@ -322,20 +325,29 @@ def main(args):
     if args.distillation_type != 'none':
         assert args.teacher_path, 'need to specify teacher-path when using distillation'
         print(f"Creating teacher model: {args.teacher_model}")
-        teacher_model = create_model(
-            args.teacher_model,
-            pretrained=False,
-            num_classes=args.nb_classes,
-            global_pool='avg',
-        )
-        if args.teacher_path.startswith('https'):
-            checkpoint = torch.hub.load_state_dict_from_url(
-                args.teacher_path, map_location='cpu', check_hash=True)
+        if 'swin' in args.teacher_model.lower():
+            teacher_model = build_model(
+                model_type=args.teacher_model,
+                num_classes=args.nb_classes,
+                pretrained_dir=args.teacher_path,
+            )
+            teacher_model.to(device)
+            teacher_model.eval()
         else:
-            checkpoint = torch.load(args.teacher_path, map_location='cpu')
-        teacher_model.load_state_dict(checkpoint['model'])
-        teacher_model.to(device)
-        teacher_model.eval()
+            teacher_model = create_model(
+                args.teacher_model,
+                pretrained=False,
+                num_classes=args.nb_classes,
+                global_pool='avg',
+            )
+            if args.teacher_path.startswith('https'):
+                checkpoint = torch.hub.load_state_dict_from_url(
+                    args.teacher_path, map_location='cpu', check_hash=True)
+            else:
+                checkpoint = torch.load(args.teacher_path, map_location='cpu')
+            teacher_model.load_state_dict(checkpoint['model'])
+            teacher_model.to(device)
+            teacher_model.eval()
 
     # wrap the criterion in our custom DistillationLoss, which
     # just dispatches to the original criterion if args.distillation_type is 'none'
@@ -415,6 +427,21 @@ def main(args):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser('DeiT training and evaluation script', parents=[get_args_parser()])
     args = parser.parse_args()
+
+    if int(os.getenv('OMPI_COMM_WORLD_LOCAL_RANK', -1)) == 0:
+        print(os.environ)
+        os.system('nvidia-smi')
+        cmd = "pip install timm==0.3.2"
+        os.system(cmd)
+        os.system('touch done.txt')
+    else:
+        print('wait for master.')
+        time.sleep(10.0)
+        master_init_done = False
+        while not master_init_done:
+            master_init_done = os.path.exists('done.txt')
+            time.sleep(10.0)
+
     if args.output_dir:
         Path(args.output_dir).mkdir(parents=True, exist_ok=True)
     main(args)
