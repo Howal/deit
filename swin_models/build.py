@@ -30,6 +30,24 @@ def build_model(model_type, num_classes, pretrained_dir=None):
                                 ape=False,
                                 patch_norm=True,
                                 use_checkpoint=False)
+    elif model_type == 'swin_tiny_patch4_window7_224':
+        model = SwinTransformer(img_size=224,
+                                patch_size=4,
+                                in_chans=3,
+                                num_classes=num_classes,
+                                embed_dim=96,
+                                depths=[2, 2, 6, 2],
+                                num_heads=[3, 6, 12, 24],
+                                window_size=7,
+                                mlp_ratio=4.0,
+                                qkv_bias=True,
+                                qk_scale=None,
+                                drop_rate=0.0,
+                                drop_path_rate=0.0,
+                                ape=False,
+                                patch_norm=True,
+                                use_checkpoint=False,
+                                double_output=True)
     else:
         raise NotImplementedError(f"Unkown model: {model_type}")
 

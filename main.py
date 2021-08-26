@@ -25,7 +25,7 @@ from samplers import RASampler
 import models
 import utils
 
-from models import build_model
+from swin_models import build_model
 
 
 def get_args_parser():
@@ -241,14 +241,21 @@ def main(args):
             label_smoothing=args.smoothing, num_classes=args.nb_classes)
 
     print(f"Creating model: {args.model}")
-    model = create_model(
-        args.model,
-        pretrained=False,
-        num_classes=args.nb_classes,
-        drop_rate=args.drop,
-        drop_path_rate=args.drop_path,
-        drop_block_rate=None,
-    )
+    if 'swin' in args.model.lower():
+        model = build_model(
+            model_type=args.model,
+            num_classes=args.nb_classes,
+            pretrained_dir=None,
+        )
+    else:
+        model = create_model(
+            args.model,
+            pretrained=False,
+            num_classes=args.nb_classes,
+            drop_rate=args.drop,
+            drop_path_rate=args.drop_path,
+            drop_block_rate=None,
+        )
 
     if args.finetune:
         if args.finetune.startswith('https'):

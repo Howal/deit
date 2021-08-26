@@ -486,7 +486,7 @@ class SwinTransformer(nn.Module):
                  window_size=7, mlp_ratio=4., qkv_bias=True, qk_scale=None,
                  drop_rate=0., attn_drop_rate=0., drop_path_rate=0.1,
                  norm_layer=nn.LayerNorm, ape=False, patch_norm=True,
-                 use_checkpoint=False, **kwargs):
+                 use_checkpoint=False, double_output=False, **kwargs):
         super().__init__()
 
         self.num_classes = num_classes
@@ -496,6 +496,7 @@ class SwinTransformer(nn.Module):
         self.patch_norm = patch_norm
         self.num_features = int(embed_dim * 2 ** (self.num_layers - 1))
         self.mlp_ratio = mlp_ratio
+        self.double_output = double_output
 
         # split image into non-overlapping patches
         self.patch_embed = PatchEmbed(
@@ -573,7 +574,10 @@ class SwinTransformer(nn.Module):
     def forward(self, x):
         x = self.forward_features(x)
         x = self.head(x)
-        return x
+        if self.double_output and self.training:
+            return x, x
+        else:
+            return x
 
     def flops(self):
         flops = 0
