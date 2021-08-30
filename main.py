@@ -27,7 +27,6 @@ import utils
 
 from swin_models import build_model
 
-
 def get_args_parser():
     parser = argparse.ArgumentParser('DeiT training and evaluation script', add_help=False)
     parser.add_argument('--batch-size', default=64, type=int)
@@ -395,7 +394,8 @@ def main(args):
             model, criterion, data_loader_train,
             optimizer, device, epoch, loss_scaler,
             args.clip_grad, model_ema, mixup_fn,
-            set_training_mode=args.finetune == ''  # keep in eval mode during finetuning
+            set_training_mode=args.finetune == '',  # keep in eval mode during finetuning
+            run=run
         )
 
         lr_scheduler.step(epoch)
@@ -416,6 +416,10 @@ def main(args):
         print(f"Accuracy of the network on the {len(dataset_val)} test images: {test_stats['acc1']:.1f}%")
         max_accuracy = max(max_accuracy, test_stats["acc1"])
         print(f'Max accuracy: {max_accuracy:.2f}%')
+
+        run.log("loss", np.float(train_stats['loss']))
+        run.log("lr", np.float(train_stats["lr"]))
+        run.log("VAL_Acc@1", np.float(test_stats['acc1']))
 
         log_stats = {**{f'train_{k}': v for k, v in train_stats.items()},
                      **{f'test_{k}': v for k, v in test_stats.items()},
@@ -440,6 +444,7 @@ if __name__ == '__main__':
         os.system('nvidia-smi')
         cmd = "pip install timm==0.3.2"
         os.system(cmd)
+        os.system("pip install azureml-core")
         os.system('touch done.txt')
     else:
         print('wait for master.')
@@ -451,4 +456,10 @@ if __name__ == '__main__':
 
     if args.output_dir:
         Path(args.output_dir).mkdir(parents=True, exist_ok=True)
+
+    # AZUREML RUN
+    
+    from azureml.core.run import Run
+    run = Run.get_context()
+
     main(args)
