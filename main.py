@@ -394,8 +394,7 @@ def main(args):
             model, criterion, data_loader_train,
             optimizer, device, epoch, loss_scaler,
             args.clip_grad, model_ema, mixup_fn,
-            set_training_mode=args.finetune == '',  # keep in eval mode during finetuning
-            run=run
+            set_training_mode=args.finetune == ''  # keep in eval mode during finetuning
         )
 
         lr_scheduler.step(epoch)
@@ -417,9 +416,10 @@ def main(args):
         max_accuracy = max(max_accuracy, test_stats["acc1"])
         print(f'Max accuracy: {max_accuracy:.2f}%')
 
-        run.log("loss", np.float(train_stats['loss']))
-        run.log("lr", np.float(train_stats["lr"]))
-        run.log("VAL_Acc@1", np.float(test_stats['acc1']))
+        if utils.is_main_process():
+            run.log("loss", np.float(train_stats['loss']))
+            run.log("lr", np.float(train_stats["lr"]))
+            run.log("VAL_Acc@1", np.float(test_stats['acc1']))
 
         log_stats = {**{f'train_{k}': v for k, v in train_stats.items()},
                      **{f'test_{k}': v for k, v in test_stats.items()},
@@ -445,6 +445,7 @@ if __name__ == '__main__':
         cmd = "pip install timm==0.3.2"
         os.system(cmd)
         os.system("pip install azureml-core")
+        os.system("pip install yacs")
         os.system('touch done.txt')
     else:
         print('wait for master.')
