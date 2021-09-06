@@ -351,7 +351,10 @@ def main(args):
                     args.teacher_path, map_location='cpu', check_hash=True)
             else:
                 checkpoint = torch.load(args.teacher_path, map_location='cpu')
-            teacher_model.load_state_dict(checkpoint['model'])
+            if 'model' not in checkpoint.keys():
+                teacher_model.load_state_dict(checkpoint)
+            else:
+                teacher_model.load_state_dict(checkpoint['model'])
             teacher_model.to(device)
             teacher_model.eval()
 
