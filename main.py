@@ -338,7 +338,9 @@ def main(args):
                 pretrained_dir=args.teacher_path,
             )
             teacher_model.to(device)
-            teacher_model.eval()
+            ### Swin teacher_model has no BN, training flag only works for DropPath and DropBlock.
+            ### So make sure we set drop_rate and drop_path_rate properly
+            # teacher_model.eval()
         else:
             teacher_model = create_model(
                 args.teacher_model,
