@@ -32,12 +32,14 @@ def train_one_epoch(model: torch.nn.Module, criterion: DistillationLoss,
         samples = samples.to(device, non_blocking=True)
         targets = targets.to(device, non_blocking=True)
 
+        t_targets = criterion.teacher_forward(samples)
+
         if mixup_fn is not None:
-            samples, targets = mixup_fn(samples, targets)
+            samples, t_targets = mixup_fn(samples, t_targets)
 
         with torch.cuda.amp.autocast():
             outputs = model(samples)
-            loss = criterion(samples, outputs, targets)
+            loss = criterion.only_hard_forward(samples, outputs, t_targets)
 
         loss_value = loss.item()
 

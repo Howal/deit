@@ -22,6 +22,31 @@ class DistillationLoss(torch.nn.Module):
         self.alpha = alpha
         self.tau = tau
 
+    def teacher_forward(self, inputs):
+        with torch.no_grad():
+            teacher_outputs = self.teacher_model(inputs)
+        return teacher_outputs.argmax(dim=1)
+
+    def only_hard_forward(self, inputs, outputs, labels):
+        """
+        Args:
+            inputs: The original inputs that are feed to the teacher model
+            outputs: the outputs of the model to be trained. It is expected to be
+                either a Tensor, or a Tuple[Tensor, Tensor], with the original output
+                in the first position and the distillation predictions as the second output
+            labels: the labels for the base criterion
+        """
+        outputs_kd = None
+        if not isinstance(outputs, torch.Tensor):
+            # assume that the model outputs a tuple of [outputs, outputs_kd]
+            outputs, outputs_kd = outputs
+
+        if self.distillation_type != 'hard':
+            raise ValueError("this branch only work for hard-distill-only-loss")
+        else:
+            return self.base_criterion(outputs, labels)
+
+
     def forward(self, inputs, outputs, labels):
         """
         Args:
