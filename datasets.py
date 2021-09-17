@@ -53,6 +53,24 @@ class INatDataset(ImageFolder):
     # __getitem__ and __len__ inherited from ImageFolder
 
 
+class TeacherNoaugDataset(ImageFolder):
+    def __getitem__(self, index: int):
+        """
+        Args:
+            index (int): Index
+        Returns:
+            tuple: (sample, target) where target is class_index of the target class.
+        """
+        path, target = self.samples[index]
+        t_sample = self.loader(path)
+        if self.transform is not None:
+            sample = self.transform(t_sample)
+        if self.target_transform is not None:
+            target = self.target_transform(target)
+
+        return sample, t_sample, target
+
+
 def build_dataset(is_train, args):
     transform = build_transform(is_train, args)
 
@@ -61,7 +79,7 @@ def build_dataset(is_train, args):
         nb_classes = 100
     elif args.data_set == 'IMNET':
         root = os.path.join(args.data_path, 'train' if is_train else 'val')
-        dataset = datasets.ImageFolder(root, transform=transform)
+        dataset = TeacherNoaugDataset(root, transform=transform)
         nb_classes = 1000
     elif args.data_set == 'INAT':
         dataset = INatDataset(args.data_path, train=is_train, year=2018,
