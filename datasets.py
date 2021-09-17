@@ -54,17 +54,23 @@ class INatDataset(ImageFolder):
 
 
 class TeacherNoaugDataset(ImageFolder):
-    def __init__(self, root, transform=None, target_transform=None,
+    def __init__(self, root, args, transform=None, target_transform=None,
                 loader=default_loader, is_valid_file=None):
         super(TeacherNoaugDataset, self).__init__(root=root, 
                                           transform=transform,
                                           target_transform=target_transform,
                                           loader=loader,
                                           is_valid_file=is_valid_file)
-        t = []
-        t.append(transforms.ToTensor())
-        t.append(transforms.Normalize(IMAGENET_DEFAULT_MEAN, IMAGENET_DEFAULT_STD))
-        self.t_transform = transforms.Compose(t)
+
+        self.t_transform = create_transform(input_size=args.input_size,
+                                            is_training=True,
+                                            color_jitter=0.0,
+                                            auto_augment='none',
+                                            interpolation=args.train_interpolation,
+                                            re_prob=0.0,
+                                            re_mode=args.remode,
+                                            re_count=0,
+                                            )
 
     def __getitem__(self, index: int):
         """
@@ -92,7 +98,7 @@ def build_dataset(is_train, args):
         nb_classes = 100
     elif args.data_set == 'IMNET':
         root = os.path.join(args.data_path, 'train' if is_train else 'val')
-        dataset = TeacherNoaugDataset(root, transform=transform)
+        dataset = TeacherNoaugDataset(root, args, transform=transform)
         nb_classes = 1000
     elif args.data_set == 'INAT':
         dataset = INatDataset(args.data_path, train=is_train, year=2018,
