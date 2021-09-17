@@ -54,6 +54,18 @@ class INatDataset(ImageFolder):
 
 
 class TeacherNoaugDataset(ImageFolder):
+    def __init__(self, root, transform=None, target_transform=None,
+                loader=default_loader, is_valid_file=None):
+        super(TeacherNoaugDataset, self).__init__(root=root, 
+                                          transform=transform,
+                                          target_transform=target_transform,
+                                          loader=loader,
+                                          is_valid_file=is_valid_file)
+        t = []
+        t.append(transforms.ToTensor())
+        t.append(transforms.Normalize(IMAGENET_DEFAULT_MEAN, IMAGENET_DEFAULT_STD))
+        self.t_transform = transforms.Compose(t)
+
     def __getitem__(self, index: int):
         """
         Args:
@@ -62,9 +74,10 @@ class TeacherNoaugDataset(ImageFolder):
             tuple: (sample, target) where target is class_index of the target class.
         """
         path, target = self.samples[index]
-        t_sample = self.loader(path)
+        sample = self.loader(path)
         if self.transform is not None:
-            sample = self.transform(t_sample)
+            t_sample = self.t_transform(sample)
+            sample = self.transform(sample)
         if self.target_transform is not None:
             target = self.target_transform(target)
 
