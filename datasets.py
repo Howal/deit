@@ -65,7 +65,7 @@ class TeacherNoaugDataset(ImageFolder):
         self.t_transform = create_transform(input_size=args.input_size,
                                             is_training=True,
                                             color_jitter=0.0,
-                                            auto_augment='none',
+                                            auto_augment=None,
                                             interpolation=args.train_interpolation,
                                             re_prob=0.0,
                                             re_mode=args.remode,
